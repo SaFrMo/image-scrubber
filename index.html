@@ -101,12 +101,15 @@ If you want other ways to cover your digital footprint, I've assembled a list of
 </div>
 
     <div id="exifInformationHolder"></div>
-    <canvas id="rawCanvas"></canvas>
-    <canvas id="imageCanvas"></canvas>
-    <canvas id="tempCanvas"></canvas>
-    <canvas id="holderCanvas"></canvas>
-    <canvas id="rotationCanvas"></canvas>
-    <canvas id="blurredCanvas"></canvas>
+    
+    <div class="canvas-holder">
+        <span>raw</span><canvas id="rawCanvas"></canvas>
+        <span>image</span><canvas id="imageCanvas"></canvas>
+        <span>temp</span><canvas id="tempCanvas"></canvas>
+        <span>holder</span><canvas id="holderCanvas"></canvas>
+        <span>rotation</span><canvas id="rotationCanvas"></canvas>
+        <span>blurred</span><canvas id="blurredCanvas"></canvas>
+    </div>
 
     <script type="text/javascript" src="scripts/exif.js"></script>
     <script type="text/javascript" src="scripts/stackblur.js"></script>
@@ -732,7 +735,7 @@ function undoLastPath(){
                 rotate(false)
                 break
             case 'path':
-                updateImage(action.meta)
+                updateImage(action.meta, false)
                 break
             default:
                 console.warn('unknown action', item)

@@ -1,13 +1,24 @@
 #rawCanvas {
-    display: none;
+    /* display: none; */
     pointer-events: none;
 }
 
-#imageCanvas{
+.canvas-holder {
     position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 100%;
+    z-index: -1;
+}
+
+#imageCanvas{
+    /* position: absolute; */
     top: 56%;
     left: 50%;
-    transform: translateX(-50%) translateY(-50%);
+    /* transform: translateX(-50%) translateY(-50%); */
     max-width: 100%;
     max-height: 82%;
     z-index: -1;
@@ -117,27 +128,27 @@
 }
 
 #tempCanvas {
-    position:absolute;
+    /* position:absolute;
     top:-1000px;
-    display: none;
+    display: none; */
 }
 
 #holderCanvas {
-    position:absolute;
+    /* position:absolute;
     top:-1000px;
-    display: none;
+    display: none; */
 }
 
 #rotationCanvas {
-    position:absolute;
+    /* position:absolute;
     top:-1000px;
-    display: none;
+    display: none; */
 }
 
 #blurredCanvas {
-    position:absolute;
+    /* position:absolute;
     top:-1000px;
-    display: none;
+    display: none; */
 }
 
 #about{
@@ -153,7 +164,7 @@ body{
     margin: 0;
     padding: 0;
     font-size: 12px;
-    overflow: hidden;
+    /* overflow: hidden; */
 }
 
 button{
