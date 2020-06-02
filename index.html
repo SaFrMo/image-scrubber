@@ -116,7 +116,8 @@ var filename;
 var img;
 
 var isDown = false;
-var painting = false;
+// 'paint', 'blur', or 'undo'
+var painting = 'blur';
 
 var canvas = document.getElementById('imageCanvas');
 var ctx = canvas.getContext('2d');
@@ -133,9 +134,42 @@ var rotationCtx = rotationCanvas.getContext("2d");
 var blurredCanvas = document.getElementById("blurredCanvas");
 var blurredCtx = blurredCanvas.getContext("2d");
 
-// keep the paths the user draws here so we can undo them easily
-// (reset on every new image load)
-var pathHistory = []
+// keep the actions the user takes here so we can undo them easily
+// an action looks likes:
+// { 
+//    type: 'path' or 'rotate',
+//    meta: {
+//        /* on 'path': */
+//        painting: 'paint' or 'blur' or 'undo', 
+//        brushSize, 
+//        blurAmount,
+//        points: [
+//            { x, y },
+//            { x, y }...
+//        ] 
+//    }
+// }
+var actionHistory = []
+
+// action factories:
+// path action
+function newPathAction(){
+    return {
+        type: 'path',
+        meta: { 
+            painting: painting, 
+            brushSize: brushSize, 
+            blurAmount: blurAmount,
+            points: [] 
+        }
+    }
+}
+// rotate action
+function newRotateAction(){
+    return {
+        type: 'rotate'
+    }
+}
 
 // these are placeholders - i map this later on in the set canvas size
 var brushSize = blurAmount = 50;
@@ -323,15 +357,8 @@ function handleMouseDown(e) {
     e.preventDefault();
     e.stopPropagation();
     
-    // if we're not undoing, start a new entry in the path history
-    if (painting !== 'undo'){
-        pathHistory.push({ 
-            painting: painting, 
-            brushSize: brushSize, 
-            blurAmount: blurAmount,
-            points: [] 
-        })
-    }
+    // start a new entry in the path history
+    actionHistory.push(newPathAction())
 
     holderCtx.save();
     holderCtx.clearRect(0, 0, holderCanvas.width, holderCanvas.height);
@@ -366,8 +393,12 @@ function handleMouseMove(e) {
     mouseY = pos.y; 
     
     // add to path history
-    if (pathHistory.length){
-        pathHistory[pathHistory.length - 1].points.push({ x: mouseX, y: mouseY })
+    if (actionHistory.length){
+        var lastItemInHistory = actionHistory[actionHistory.length - 1]
+        if (lastItemInHistory.type !== 'path'){
+            actionHistory.push(newPathAction())
+        }
+        actionHistory[actionHistory.length - 1].meta.points.push({ x: mouseX, y: mouseY })
     }
 
     ctx.beginPath();
@@ -440,7 +471,6 @@ function updateImage(opts = {}){
     // local version to account for overrides
     var _painting = opts.hasOwnProperty('painting') ? opts.painting : painting
     var _blurAmount = opts.hasOwnProperty('blurAmount') ? opts.blurAmount : blurAmount
-    
     if (_painting != "paint"){
         // var tempBlurAmount = blurAmount;
         if (_painting == "undo"){
@@ -589,6 +619,9 @@ var rotate = function () {
 
             //holderImageData = null;
             rotating = false;
+            
+            // save rotate to action history
+            actionHistory.push('')
         }
     }
 }
@@ -678,15 +711,15 @@ var holderArray = []
 }
 
 function undoLastPath(){
-    var lastPath = pathHistory.pop()
+    var lastPath = actionHistory.pop()
     // nothing in the path history
-    if (!lastPath || !lastPath.points){
+    if (!lastPath || !lastPath.meta.points){
         console.warn('nothing to undo')
         return
     }
     
     // draw undo arcs over the selected area
-    lastPath.points.forEach(function(point) {
+    lastPath.meta.points.forEach(function(point) {
         ctx.beginPath();
         ctx.arc(point.x, point.y, lastPath.brushSize, 0, Math.PI * 2);
         ctx.closePath();
@@ -697,9 +730,11 @@ function undoLastPath(){
         tempCtx.fill();
     })
     updateImage({ 
-        painting: 'undo',
-        brushSize: lastPath.brushSize, 
-        blurAmount: lastPath.blurAmount 
+        meta: {
+            painting: 'undo',
+            brushSize: lastPath.brushSize, 
+            blurAmount: lastPath.blurAmount 
+        }
     })
 }
 
