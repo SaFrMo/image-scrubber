@@ -297,7 +297,7 @@ function onFileChange(e) {
     }
 }
 
-function resetCanvas(){
+function resetCanvas(){    
     if (img.width < 2500 && img.height < 2500){
         var canvasScale = 1;
     }
@@ -310,7 +310,7 @@ function resetCanvas(){
     rawCtx.drawImage(img,0,0,img.width*canvasScale,img.height*canvasScale);
     ctx.drawImage(img,0,0,img.width*canvasScale,img.height*canvasScale);
     rotationCtx.drawImage(img,0,0,img.width*canvasScale,img.height*canvasScale);
-
+    
     var biggerDimension = Math.max(canvas.width, canvas.height);
 
     // gotta clean this up later - this 800 value is just adjusting for size but i should make it a variable set at the top
@@ -532,94 +532,99 @@ button.onclick = function () {
 
 var myImageData, tempImageData, holderImageData, blurredImageData, rotating = false;
 
-var rotate = function () {
-    if (!rotating) {
-        rotating = true;
-        // store current data to an image
-        myImageData = new Image();
-        tempImageData = new Image();
-        rotationImageData = new Image();
-        blurredImageData = new Image();
+var rotate = function (saveAction = true) {
+    return new Promise(function(res, rej){
+        if (!rotating) {
+            rotating = true;
+            // store current data to an image
+            myImageData = new Image();
+            tempImageData = new Image();
+            rotationImageData = new Image();
+            blurredImageData = new Image();
 
-        myImageData.src = canvas.toDataURL();
-        tempImageData.src = tempCanvas.toDataURL();
-        rotationImageData.src = rotationCanvas.toDataURL();
-        blurredImageData.src = blurredCanvas.toDataURL();
+            myImageData.src = canvas.toDataURL();
+            tempImageData.src = tempCanvas.toDataURL();
+            rotationImageData.src = rotationCanvas.toDataURL();
+            blurredImageData.src = blurredCanvas.toDataURL();
 
-        //holderImageData.src = holderCanvas.toDataURL();
-
-
-       myImageData.onload = function () {
-            // reset the canvas with new dimensions
-            cw = canvas.width;
-            ch = canvas.height;
-            canvas.width = ch;
-            canvas.height = cw;
-            tempCanvas.width = ch;
-            tempCanvas.height = cw;
-            holderCanvas.width = ch;
-            holderCanvas.height = cw;
-            rotationCanvas.width = ch;
-            rotationCanvas.height = cw;
-            blurredCanvas.width = ch;
-            blurredCanvas.height = cw;
-            cw = canvas.width;
-            ch = canvas.height;
-
-            ctx.save();
-            // translate and rotate
-            ctx.translate(cw, ch / cw);
-            ctx.rotate(Math.PI / 2);
-            // draw the previows image, now rotated
-            ctx.drawImage(myImageData, 0, 0);
-            ctx.restore();
-
-            tempCtx.save();
-            // translate and rotate
-            tempCtx.translate(cw, ch / cw);
-            tempCtx.rotate(Math.PI / 2);
-            // draw the previows image, now rotated
-            tempCtx.drawImage(tempImageData, 0, 0);
-            tempCtx.restore();
-
-
-            rotationCtx.save();
-            // translate and rotate
-            rotationCtx.translate(cw, ch / cw);
-            rotationCtx.rotate(Math.PI / 2);
-            // draw the previows image, now rotated
-            rotationCtx.drawImage(rotationImageData, 0, 0);
-            rotationCtx.restore();
-
-            blurredCtx.save();
-            // translate and rotate
-            blurredCtx.translate(cw, ch / cw);
-            blurredCtx.rotate(Math.PI / 2);
-            // draw the previows image, now rotated
-            blurredCtx.drawImage(rotationImageData, 0, 0);
-            blurredCtx.restore();
-
-            //don't need to rotate the holder as it gets cleared anyway.
-            //holderCtx.save();
-            // translate and rotate
-            //holderCtx.translate(cw, ch / cw);
-            //holderCtx.rotate(Math.PI / 2);
-            // draw the previows image, now rotated
-            //holderCtx.drawImage(holderImageData, 0, 0);
-            //holderCtx.restore();
-
-            // clear the temporary image
-            myImageData = null;
-            tempImageData = null;
-            blurredImageData = null;
-
-            //holderImageData = null;
-            rotating = false;
+            //holderImageData.src = holderCanvas.toDataURL();
             
             // save rotate to action history
-            actionHistory.push(newRotateAction())
+            if (saveAction){
+                actionHistory.push(newRotateAction())
+            }
+
+           myImageData.onload = function () {
+                // reset the canvas with new dimensions
+                cw = canvas.width;
+                ch = canvas.height;
+                canvas.width = ch;
+                canvas.height = cw;
+                tempCanvas.width = ch;
+                tempCanvas.height = cw;
+                holderCanvas.width = ch;
+                holderCanvas.height = cw;
+                rotationCanvas.width = ch;
+                rotationCanvas.height = cw;
+                blurredCanvas.width = ch;
+                blurredCanvas.height = cw;
+                cw = canvas.width;
+                ch = canvas.height;
+
+                ctx.save();
+                // translate and rotate
+                ctx.translate(cw, ch / cw);
+                ctx.rotate(Math.PI / 2);
+                // draw the previows image, now rotated
+                ctx.drawImage(myImageData, 0, 0);
+                ctx.restore();
+
+                tempCtx.save();
+                // translate and rotate
+                tempCtx.translate(cw, ch / cw);
+                tempCtx.rotate(Math.PI / 2);
+                // draw the previows image, now rotated
+                tempCtx.drawImage(tempImageData, 0, 0);
+                tempCtx.restore();
+
+
+                rotationCtx.save();
+                // translate and rotate
+                rotationCtx.translate(cw, ch / cw);
+                rotationCtx.rotate(Math.PI / 2);
+                // draw the previows image, now rotated
+                rotationCtx.drawImage(rotationImageData, 0, 0);
+                rotationCtx.restore();
+
+                blurredCtx.save();
+                // translate and rotate
+                blurredCtx.translate(cw, ch / cw);
+                blurredCtx.rotate(Math.PI / 2);
+                // draw the previows image, now rotated
+                blurredCtx.drawImage(rotationImageData, 0, 0);
+                blurredCtx.restore();
+
+                //don't need to rotate the holder as it gets cleared anyway.
+                //holderCtx.save();
+                // translate and rotate
+                //holderCtx.translate(cw, ch / cw);
+                //holderCtx.rotate(Math.PI / 2);
+                // draw the previows image, now rotated
+                //holderCtx.drawImage(holderImageData, 0, 0);
+                //holderCtx.restore();
+
+                // clear the temporary image
+                myImageData = null;
+                tempImageData = null;
+                blurredImageData = null;
+
+                //holderImageData = null;
+                rotating = false;
+                
+                res()
+            }
         }
-    }
+    })
 }
 
 
@@ -707,19 +712,32 @@ var holderArray = []
 }
 
 function undoLastPath(){
-    var lastPath = actionHistory.pop()
-    // nothing in the path history
-    if (!lastPath || !lastPath.meta.points){
+    // pop last action
+    // TODO: switch to "redo" queue
+    var lastAction = actionHistory.pop()
+    
+    // nothing in history
+    if (!lastAction){
         console.warn('nothing to undo')
         return
     }
     
-    // pop last action
-    // TODO: switch to "redo" queue
-    actionHistory.pop()
-    // reset canvasf
+    // reset canvas
     resetCanvas()
-    console.log('perform each action in history on reset canvas')
+    
+    // re-perform all actions on the new canvas
+    promiseForEach(actionHistory, function(action){
+        switch(action.type){
+            case 'rotate':
+                rotate(false)
+                break
+            case 'path':
+                updateImage(action.meta)
+                break
+            default:
+                console.warn('unknown action', item)
+        }
+    })
     
     // draw undo arcs over the selected area
     // lastPath.meta.points.forEach(function(point) {
@@ -765,6 +783,28 @@ function randomCryptoNumber(){
 function negativeOrPositive(){
   return randomCryptoNumber() < 0.5 ? -1 : 1;
 }
+
+// https://riptutorial.com/javascript/example/7609/foreach-with-promises
+function promiseForEach(arr, cb) {
+  var i = 0;
+
+  var nextPromise = function () {
+    if (i >= arr.length) {
+      // Processing finished.
+      return;
+    }
+
+    // Process next function. Wrap in `Promise.resolve` in case
+    // the function does not return a promise
+    var newPromise = Promise.resolve(cb(arr[i], i));
+    i++;
+    // Chain to finish processing.
+    return newPromise.then(nextPromise);
+  };
+
+  // Kick off the chain.
+  return Promise.resolve().then(nextPromise);
+};
 
 
 
