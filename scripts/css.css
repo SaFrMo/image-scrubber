@@ -26,6 +26,7 @@
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
+    text-align: center;
     min-height: 8vh;
 }
 .topBarDiv.dropZone {
@@ -210,6 +211,11 @@ pre {
 .customFileOpen{
     cursor: copy;
     width: 100%;
+}
+.inputRangeWrap {
+    display: flex;
+    flex-direction: column;
+    padding: 0 10px;
 }
 
 .undoButton {

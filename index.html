@@ -47,7 +47,7 @@
 <div id="rotate" class="topBarDiv controlButton">Rotate Image ⤾</div>
 
 
-<div id="paintBlur" class="topBarDiv" class="customFileOpen"><center>
+<div id="paintBlur" class="topBarDiv" class="customFileOpen">
 <form id="paintForm">
 <input type="radio" id="Paint" name="paintingAction" value="paint">
 <label for="Paint">Paint</label><br>
@@ -57,16 +57,16 @@
 <label for="Undo">Undo&nbsp;</label><br>
 <button class="undoButton">Undo Last&nbsp;</button>
 </form>
-</center>
+
 </div>
 
 
-<div id="brushSizeDiv" class="topBarDiv"><center> Brush Size<br>
-  <input type="range" min="10" max="100" value="55" class="slider" id="brushSizeSlider"></center>
+<div id="brushSizeDiv" class="topBarDiv inputRangeWrap">  Brush Size<br>
+  <input type="range" min="10" max="100" value="55" class="slider" id="brushSizeSlider">
 </div>
 
-<div id="blurAmountDiv" class="topBarDiv"><center> Blur Radius<br>
-  <input type="range" min="20" max="150" value="75" class="slider" id="blurAmountSlider"></center>
+<div id="blurAmountDiv" class="topBarDiv inputRangeWrap"> Blur Radius<br>
+  <input type="range" min="20" max="150" value="75" class="slider" id="blurAmountSlider">
 </div>
 </div>
 
@@ -74,7 +74,7 @@
 
 <div id="imageScrubberInfo">
 <pre>
-<center><b>Image Scrubber</b></center>
+<b>Image Scrubber</b>
 
 This is a tool for anonymizing photographs taken at protests.
 
@@ -264,7 +264,7 @@ function onFileChange(e) {
             var exifData = JSON.stringify(this.exifdata, null, 4);
             if (exifData) {
                 if (exifData.toString() == "{}"){
-                    exifInformationHolder.innerHTML = "<center>No EXIF data found in image '" + file.name + "'.<br><br></center>";
+                    exifInformationHolder.innerHTML = "No EXIF data found in image '" + file.name + "'.<br><br>";
                     var btn = document.createElement("BUTTON");
                     btn.id="continueButton";
                     btn.innerHTML = "Continue to edit image";
