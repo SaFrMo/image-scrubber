@@ -21,8 +21,10 @@ var blurredCtx = blurredCanvas.getContext('2d');
 
 // these are placeholders - i map this later on in the set canvas size
 var brushSize = (blurAmount = 50);
+// the larger this value, the smaller the brush
 var brushAdjustment = 800;
 
+// prep canvas listeners
 canvas.addEventListener('mousedown', handleMouseDown);
 canvas.addEventListener('mousemove', handleMouseMove);
 canvas.addEventListener('mouseup', handleMouseUp);
@@ -33,6 +35,7 @@ canvas.addEventListener('touchmove', handleTouchMove);
 canvas.addEventListener('touchend', handleMouseUp);
 canvas.addEventListener('touchcancel', handleMouseUp);
 
+// prep window listeners
 window.addEventListener(
     'dragover',
     function (e) {
@@ -50,33 +53,30 @@ window.addEventListener(
     false
 );
 
-var brushSizeDiv = document.getElementById('brushSizeSlider');
-brushSizeDiv.onchange = populateBrushSize;
-
-var blurAmountDiv = document.getElementById('blurAmountSlider');
-blurAmountDiv.onchange = populateBlurAmount;
-
-function populateBrushSize() {
+// prep brush size listener
+document.getElementById('brushSizeSlider').onchange = function() {
     brushSize = Math.floor((this.value * canvas.width) / brushAdjustment);
-    setCursor();
+    setCursor(brushSize);
 }
 
-function populateBlurAmount() {
+// prep blur radius listener
+document.getElementById('blurAmountSlider').onchange = function() {
     blurAmount = Math.floor(this.value);
 }
 
-function setCursor() {
+// draw the cursor offscreen according to the given cursorSize
+function setCursor(cursorSize) {
     var cursorCanvas = document.createElement('canvas');
     var scaleX = canvas.getBoundingClientRect().width / canvas.width;
-    cursorCanvas.width = brushSize * 2 * scaleX;
-    cursorCanvas.height = brushSize * 2 * scaleX;
+    cursorCanvas.width = cursorSize * 2 * scaleX;
+    cursorCanvas.height = cursorSize * 2 * scaleX;
     var cursorCtx = cursorCanvas.getContext('2d');
 
     cursorCtx.beginPath();
     cursorCtx.arc(
         cursorCanvas.width / 2,
         cursorCanvas.height / 2,
-        brushSize * scaleX,
+        cursorSize * scaleX,
         0,
         Math.PI * 2
     );
@@ -95,29 +95,11 @@ function setCursor() {
 
 // get list of radio buttons with name 'paintForm'
 var sz = document.forms['paintForm'].elements['paintingAction'];
-
-// loop through list
+// loop through list and add listeners
 for (var i = 0, len = sz.length; i < len; i++) {
     sz[i].onclick = function () {
         painting = this.value;
     };
-}
-
-function saveImage() {
-    document.getElementById('imageCanvas').toBlob(
-        function (blob) {
-            var link = document.createElement('a');
-
-            var nameWithoutPath = filename.replace(/.*[\\/]([^\\/]+)$/, '$1');
-            var nameWithoutExtension = nameWithoutPath.replace(/\.[^.]*$/, '');
-
-            link.download = nameWithoutExtension + '_scrubbed.jpg';
-            link.href = URL.createObjectURL(blob);
-            link.click();
-        },
-        'image/jpeg',
-        0.8
-    );
 }
 
 const dropContainer = document.getElementById('drop-zone');
@@ -132,16 +114,22 @@ function onFileChange(e) {
     reader.onload = function (event) {
         img = new Image();
         img.onload = function () {
-            if (img.width < 2500 && img.height < 2500) {
+            
+            // determine the canvas sizes
+            var maxWidth = 2500;
+            if (img.width < maxWidth && img.height < maxWidth) {
                 var canvasScale = 1;
             } else {
-                var canvasScale = Math.min(2500 / img.width, 2500 / img.height);
+                var canvasScale = Math.min(maxWidth / img.width, maxWidth / img.height);
             }
 
+            // resize canvases
             canvas.width = tempCanvas.width = holderCanvas.width = rotationCanvas.width = blurredCanvas.width =
                 img.width * canvasScale;
             canvas.height = tempCanvas.height = holderCanvas.height = rotationCanvas.height = blurredCanvas.height =
                 img.height * canvasScale;
+                
+            // draw the image on `imageCanvas`
             ctx.drawImage(
                 img,
                 0,
@@ -149,6 +137,7 @@ function onFileChange(e) {
                 img.width * canvasScale,
                 img.height * canvasScale
             );
+            // draw the image on `rotationCanvas`
             rotationCtx.drawImage(
                 img,
                 0,
@@ -157,11 +146,16 @@ function onFileChange(e) {
                 img.height * canvasScale
             );
 
+            // determine larger side, which will be used when setting initial brush size
             var biggerDimension = Math.max(canvas.width, canvas.height);
-
+            // set the initial brush size
+            // larger images start with larger brushes
             brushSize = 50 * (biggerDimension / brushAdjustment);
+            // tighten the blur amount (remap from 10..157 to 20..150)
+            // see `scale` below for more info on this function - in practice,
+            // this should create a narrower starting range of blur amounts
             blurAmount = scale(brushSize, 10, 157, 20, 150);
-            setCursor();
+            setCursor(brushSize);
         };
         img.src = event.target.result;
     };
@@ -455,6 +449,10 @@ var rotate = function () {
     }
 };
 
+// interpolate a value between two ranges
+// example: given `in` range 0-10 and `out` range 0-100,
+// `5` would map to `50`
+// scale(5, 0, 10, 0, 100) === 50
 const scale = (num, in_min, in_max, out_min, out_max) => {
     return ((num - in_min) * (out_max - out_min)) / (in_max - in_min) + out_min;
 };
