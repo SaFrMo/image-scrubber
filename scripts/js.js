@@ -65,7 +65,11 @@ document.getElementById('blurAmountSlider').onchange = function() {
 }
 
 // draw the cursor offscreen according to the given cursorSize
-function setCursor(cursorSize) {
+function setCursor(cursorSize = -1) {
+    // set default if none given
+    if (cursorSize === -1){
+        cursorSize = brushSize
+    }
     var cursorCanvas = document.createElement('canvas');
     var scaleX = canvas.getBoundingClientRect().width / canvas.width;
     cursorCanvas.width = cursorSize * 2 * scaleX;
