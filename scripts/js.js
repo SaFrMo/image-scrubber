@@ -19,6 +19,9 @@ var rotationCtx = rotationCanvas.getContext('2d');
 var blurredCanvas = document.getElementById('blurredCanvas');
 var blurredCtx = blurredCanvas.getContext('2d');
 
+var offscreenCanvas = document.getElementById('offscreenCanvas');
+var offscreenCtx = offscreenCanvas.getContext('2d');
+
 // these are placeholders - i map this later on in the set canvas size
 var brushSize = (blurAmount = 50);
 // the larger this value, the smaller the brush
@@ -471,12 +474,8 @@ function pixelateCanvas(inCanvas, inCtx) {
     w = inCanvas.width * size;
     h = inCanvas.height * size;
 
-    // create offscreen image
-    var offscreenCanvas = document.createElement('canvas');
     offscreenCanvas.width = w;
     offscreenCanvas.height = h;
-
-    var offscreenCtx = offscreenCanvas.getContext('2d');
 
     offscreenCtx.drawImage(inCanvas, 0, 0, w, h);
     inCtx.save();
@@ -571,6 +570,11 @@ function randomCryptoNumber() {
 function negativeOrPositive() {
     return randomCryptoNumber() < 0.5 ? -1 : 1;
 }
+
+
+
+
+
 
 //bits of this code lifted and adapted from various jsfiddles and libraries --
 //thank you:
