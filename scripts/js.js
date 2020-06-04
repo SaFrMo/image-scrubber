@@ -3,6 +3,7 @@ var img;
 
 var isDown = false;
 var painting = false;
+var lastPos;
 
 var canvas = document.getElementById('imageCanvas');
 var ctx = canvas.getContext('2d');
@@ -38,26 +39,13 @@ canvas.addEventListener('touchmove', handleTouchMove);
 canvas.addEventListener('touchend', handleMouseUp);
 canvas.addEventListener('touchcancel', handleMouseUp);
 
-// prep window listeners
-window.addEventListener(
-    'dragover',
-    function (e) {
-        e = e || event;
-        e.preventDefault();
-    },
-    false
-);
-window.addEventListener(
-    'drop',
-    function (e) {
-        e = e || event;
-        e.preventDefault();
-    },
-    false
-);
+var brushSizeDiv = document.getElementById('brushSizeSlider');
+brushSizeDiv.onchange = populateBrushSize;
 
-// prep brush size listener
-document.getElementById('brushSizeSlider').onchange = function() {
+var blurAmountDiv = document.getElementById('blurAmountSlider');
+blurAmountDiv.onchange = populateBlurAmount;
+
+function populateBrushSize() {
     brushSize = Math.floor((this.value * canvas.width) / brushAdjustment);
     setCursor(brushSize);
 }
@@ -109,123 +97,22 @@ for (var i = 0, len = sz.length; i < len; i++) {
     };
 }
 
-const dropContainer = document.getElementById('drop-zone');
-const fileInput = document.getElementById('file-input');
+function saveImage() {
+    document.getElementById('imageCanvas').toBlob(
+        function (blob) {
+            var link = document.createElement('a');
 
-dropContainer.ondragover = dropContainer.ondragenter = function (evt) {
-    evt.preventDefault();
-};
+            var nameWithoutPath = filename.replace(/.*[\\/]([^\\/]+)$/, '$1');
+            var nameWithoutExtension = nameWithoutPath.replace(/\.[^.]*$/, '');
 
-function onFileChange(e) {
-    var reader = new FileReader();
-    reader.onload = function (event) {
-        img = new Image();
-        img.onload = function () {
-            
-            // determine the canvas sizes
-            var maxWidth = 2500;
-            if (img.width < maxWidth && img.height < maxWidth) {
-                var canvasScale = 1;
-            } else {
-                var canvasScale = Math.min(maxWidth / img.width, maxWidth / img.height);
-            }
-
-            // resize canvases
-            canvas.width = tempCanvas.width = holderCanvas.width = rotationCanvas.width = blurredCanvas.width =
-                img.width * canvasScale;
-            canvas.height = tempCanvas.height = holderCanvas.height = rotationCanvas.height = blurredCanvas.height =
-                img.height * canvasScale;
-                
-            // draw the image on `imageCanvas`
-            ctx.drawImage(
-                img,
-                0,
-                0,
-                img.width * canvasScale,
-                img.height * canvasScale
-            );
-            // draw the image on `rotationCanvas`
-            rotationCtx.drawImage(
-                img,
-                0,
-                0,
-                img.width * canvasScale,
-                img.height * canvasScale
-            );
-
-            // determine larger side, which will be used when setting initial brush size
-            var biggerDimension = Math.max(canvas.width, canvas.height);
-            // set the initial brush size
-            // larger images start with larger brushes
-            brushSize = 50 * (biggerDimension / brushAdjustment);
-            // tighten the blur amount (remap from 10..157 to 20..150)
-            // see `scale` below for more info on this function - in practice,
-            // this should create a narrower starting range of blur amounts
-            blurAmount = scale(brushSize, 10, 157, 20, 150);
-            setCursor(brushSize);
-        };
-        img.src = event.target.result;
-    };
-    reader.readAsDataURL(e.target.files[0]);
-
-    filename = document.getElementById('file-input').value;
-    var exifInformationDiv = document.getElementById('exifInformationHolder');
-    var imageScrubberInfo = document.getElementById('imageScrubberInfo');
-    imageScrubberInfo.style.display = 'none';
-    exifInformationDiv.style.display = 'block';
-    var file = e.target.files[0];
-    if (file && file.name) {
-        EXIF.getData(file, function () {
-            var exifData = JSON.stringify(this.exifdata, null, 4);
-            if (exifData) {
-                if (exifData.toString() == '{}') {
-                    exifInformationHolder.innerHTML =
-                        "<center>No EXIF data found in image '" +
-                        file.name +
-                        "'.<br><br></center>";
-                    var btn = document.createElement('BUTTON');
-                    btn.id = 'continueButton';
-                    btn.innerHTML = 'Continue to edit image';
-                    btn.onclick = goToBlur;
-                    exifInformationHolder.appendChild(btn);
-                } else {
-                    var exifScrollDiv = document.createElement('div');
-                    exifScrollDiv.id = 'exifScrollDiv';
-                    exifScrollDiv.innerHTML =
-                        file.name + '<pre>' + exifData + '</pre>';
-                    exifInformationHolder.innerHTML = 'Exif Data:<br><br>';
-                    exifInformationHolder.appendChild(exifScrollDiv);
-
-                    var btn = document.createElement('BUTTON');
-                    btn.id = 'continueButtonExif';
-                    btn.innerHTML = 'Scrub Exif Data';
-                    btn.onclick = scrubData;
-                    exifInformationHolder.appendChild(btn);
-                }
-            }
-        });
-    }
+            link.download = nameWithoutExtension + '_scrubbed.jpg';
+            link.href = URL.createObjectURL(blob);
+            link.click();
+        },
+        'image/jpeg',
+        0.8
+    );
 }
-
-dropContainer.ondrop = function (evt) {
-    // pretty simple -- but not for IE :(
-    fileInput.files = evt.dataTransfer.files;
-
-    // If you want to use some of the dropped files
-    const dT = new DataTransfer();
-    dT.items.add(evt.dataTransfer.files[0]);
-    fileInput.files = dT.files;
-    // Create a new 'change' event
-    const event = new Event('change');
-
-    // Dispatch it.
-    fileInput.dispatchEvent(event);
-    evt.preventDefault();
-};
-
-fileInput.onchange = function (e) {
-    onFileChange(e);
-};
 
 function scrubData() {
     document.getElementById('exifInformationHolder').style.display = 'none';
@@ -247,6 +134,7 @@ function handleMouseDown(e) {
 
     tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
     isDown = true;
+    lastPos = getMousePos(canvas, e);
 }
 
 function handleMouseOut(e) {
@@ -269,6 +157,7 @@ function handleMouseMove(e) {
     e.preventDefault();
     e.stopPropagation();
     drawMousePath(pos.x, pos.y);
+    lastPos = pos;
 }
 
 function handleTouchMove(e) {
@@ -293,24 +182,13 @@ function handleTouchMove(e) {
     );
     // send it to the same target as the touch event contact point.
     touch.target.dispatchEvent(mouseEvent);
-
-    var pos = getMousePos(canvas, e);
-    posx = pos.x;
-    posy = pos.y;
-
-    if (!isDown) {
-        return;
-    }
-    e.preventDefault();
-    e.stopPropagation();
-
-    drawMousePath(pos.x, pos.y);
 }
 
 function handleMouseUp(e) {
     e.preventDefault();
     e.stopPropagation();
     isDown = false;
+    lastPos = null;
     if (painting != 'paint') {
         var tempBlurAmount = blurAmount;
         if (painting == 'undo') {
@@ -323,7 +201,9 @@ function handleMouseUp(e) {
         if (painting != 'undo') {
             pixelateCanvas(blurredCanvas, blurredCtx);
         }
+
         //blur command is here - undo brush is this same command, but run w radius zero
+        
         stackBlurCanvasRGBA(
             'blurredCanvas',
             0,
@@ -348,14 +228,24 @@ function handleMouseUp(e) {
 }
 
 function drawMousePath(mouseX, mouseY) {
-    ctx.beginPath();
-    ctx.arc(mouseX, mouseY, brushSize, 0, Math.PI * 2);
-    ctx.closePath();
-    ctx.fill();
-    tempCtx.beginPath();
-    tempCtx.arc(mouseX, mouseY, brushSize, 0, Math.PI * 2);
-    tempCtx.closePath();
-    tempCtx.fill();
+    interpolatePath(ctx, lastPos.x, lastPos.y, mouseX, mouseY, brushSize);
+    interpolatePath(tempCtx, lastPos.x, lastPos.y, mouseX, mouseY, brushSize);
+}
+
+function interpolatePath(pathCtx, x1, y1, x2, y2, r) {
+    // Draw rectangle from last point
+    pathCtx.beginPath();
+    pathCtx.moveTo(x1,y1);
+    pathCtx.lineTo(x2,y2);
+    pathCtx.closePath();
+    pathCtx.lineWidth = 2 * r;
+    pathCtx.stroke();
+
+    // Draw the circle at the end
+    pathCtx.beginPath();
+    pathCtx.arc(x2, y2, r, 0, Math.PI * 2);
+    pathCtx.closePath();
+    pathCtx.fill();
 }
 
 function getMousePos(canvas, evt) {
@@ -474,11 +364,19 @@ function pixelateCanvas(inCanvas, inCtx) {
     w = inCanvas.width * size;
     h = inCanvas.height * size;
 
-    offscreenCanvas.width = w;
-    offscreenCanvas.height = h;
+    offscreenCanvas.width = inCanvas.width; //w;
+    offscreenCanvas.height = inCanvas.height; //h;
 
     offscreenCtx.drawImage(inCanvas, 0, 0, w, h);
+    offscreenCtx.scale(w*size,h*size);
+    
     inCtx.save();
+
+    // turn off image aliasing for a pixely look - currently off
+    //inCtx.msImageSmoothingEnabled = false;
+    //inCtx.mozImageSmoothingEnabled = false;
+    //inCtx.webkitImageSmoothingEnabled = false;
+    //inCtx.imageSmoothingEnabled = false;
 
     // enlarge the minimized image to full size and draw to main canvas
     inCtx.drawImage(
@@ -498,7 +396,6 @@ function pixelateCanvas(inCanvas, inCtx) {
 
     offscreenCtx.putImageData(pixelArray, 0, 0);
 
-    // enlarge the minimized image to full size and draw to main canvas
     inCtx.drawImage(
         offscreenCanvas,
         0,
@@ -511,12 +408,14 @@ function pixelateCanvas(inCanvas, inCtx) {
         inCanvas.height
     );
 
+
     inCtx.restore();
 }
 
 function shuffle(array) {
     //this should maybe just be running on the blur path not the whole canvas - however i'd need to refactor the way the data is passed around in general so for now it runs on the whole canvas
 
+    var biggerDimension = Math.max(canvas.width, canvas.height);
     var holderArray = [];
 
     for (var i = 0, n = array.length; i < n; i += 4) {
@@ -531,13 +430,13 @@ function shuffle(array) {
     }
 
     for (x = 0; x < holderArray.length; x++) {
-        //gets a random element within canvas.width/60 pixels of this one - in the linear pixel array, its kind of silly but it works! always skews horizontal. might want to come back through and do something nicer but its getting blurred anyway so eh
+        //gets a random element within biggerDimension/100 pixels of this one - in the linear pixel array, its kind of silly but it works! always skews horizontal. might want to come back through and do something nicer but its getting blurred anyway so eh
 
         var randomElement =
             x +
             Math.floor(
                 randomCryptoNumber() *
-                    (canvas.width / 60) *
+                    (biggerDimension / 100) *
                     negativeOrPositive()
             );
 
@@ -559,6 +458,7 @@ function shuffle(array) {
     }
     return array;
 }
+
 
 function randomCryptoNumber() {
     var buf = new Uint8Array(1);
