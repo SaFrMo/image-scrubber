@@ -46,13 +46,14 @@ My code is still a bit of a mess but utility over cleanliness, will continue to 
 
 ## Tech notes
 
-There are 5 canvases on the page:
+There are 6 canvases on the page:
 
 * `imageCanvas` is the only visible canvas. It's where the composite image is rendered and is downloaded when the user is done.
 * `tempCanvas`
 * `holderCanvas`
 * `rotationCanvas`
 * `blurredCanvas`
+* `offscreenCanvas`, which is used to render the custom cursor
 
 When you open an image:
 
